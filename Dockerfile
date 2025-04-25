@@ -1,13 +1,16 @@
 FROM python:3.12
 
-ENV PYTHONUNBUFFERED 1
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openjdk-17-jdk curl gnupg \
+ && rm -rf /var/lib/apt/lists/*
 
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-EXPOSE 8000
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
-
-RUN pip install -r requirements.txt
 
 CMD ["python", "src/main.py"]
