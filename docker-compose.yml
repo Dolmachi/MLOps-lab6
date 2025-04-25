@@ -13,7 +13,7 @@ services:
     container_name: mongodb-container
     restart: unless-stopped
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=dolmachi
+      - MONGO_INITDB_ROOT_USERNAME=user
       - MONGO_INITDB_ROOT_PASSWORD=12345
     volumes:
       - ./data/mongo-dump:/dump:ro

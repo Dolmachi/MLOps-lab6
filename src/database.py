@@ -1,13 +1,19 @@
 import configparser
 import sys
+from pathlib import Path
 from pymongo import MongoClient
 from logger import Logger
+
+
+root_dir = Path(__file__).parent.parent
+CONFIG_PATH = str(root_dir / 'config.ini')
+
 
 class MongoDBConnector:
     def __init__(self):
         self.logger = Logger().get_logger(__name__)
         self.config = configparser.ConfigParser()
-        self.config.read("config_secret.ini")
+        self.config.read(CONFIG_PATH)
         self.db_config = self.config['DATABASE']
     
     def get_database(self):
