@@ -11,9 +11,11 @@ class InferenceJob:
         self.pred = Predictor()
 
     def run(self):
+        # Считываем данные
         df = self.read_from_mongo()
         self.log.info(f"Источник: {df.count():,} документов")
-
+        
+        # Предсказываем и записываем в другую коллекцию
         df_pred = self.pred.predict(df)
         self.write_to_mongo(df_pred.select("_id", "cluster"))
         self.log.info("Предсказания сохранены!")
