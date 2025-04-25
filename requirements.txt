@@ -1,1 +1,4 @@
 matplotlib==3.10.0
+pyspark==3.5.5
+pymongo==4.8.0
+pandas==2.2.3
