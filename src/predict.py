@@ -9,7 +9,7 @@ from pyspark.sql import SparkSession
 
 root_dir = Path(__file__).parent.parent
 CONFIG_PATH = str(root_dir / 'config.ini')
-DATA_PATH   = str(root_dir / 'data' / 'processed_products.csv')
+DATA_PATH = str(root_dir / 'data' / 'processed_products.csv')
 MODEL_PATH  = str(root_dir / 'model')
 
 

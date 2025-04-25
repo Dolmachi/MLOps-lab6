@@ -174,3 +174,5 @@ products.csv
 processed_products.csv
 
 logfile.log
+
+data/mongo-dump
