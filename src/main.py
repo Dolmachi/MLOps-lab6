@@ -1,65 +1,45 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-import pandas as pd
 import os
-import sys
-
-from predict import PipelinePredictor
-from database import MongoDBConnector
 from logger import Logger
+from database import MongoDBConnector     # только чтобы взять cred’ы из конфигов
+from predict import Predictor
+from pyspark.sql import DataFrame
 
-class CarFeatures(BaseModel):
-    Doors: int
-    Year: int
-    Owner_Count: int
-    Brand: str
-    Model: str
-    Fuel_Type: str
-    Transmission: str
-    Engine_Size: float
-    Mileage: float
 
-class CarPriceAPI:
+class InferenceJob:
     def __init__(self):
-        """Инициализация API и зависимостей"""
-        self.logger = Logger(True).get_logger(__name__)
-        self.app = FastAPI()
-        self.predictor = PipelinePredictor()
-        self.db = MongoDBConnector().get_database()
-        self._register_routes()
+        self.log = Logger().get_logger(__name__)
+        self.pred = Predictor()
 
-    def _register_routes(self):
-        """Регистрация маршрутов API"""
-        @self.app.get('/')
-        def health_check():
-            return {'health_check': 'OK'}
+    def run(self):
+        df = self.read_from_mongo()
+        self.log.info(f"Источник: {df.count():,} документов")
 
-        @self.app.post("/predict")
-        def predict(features: CarFeatures):
-            # Получаем данные и делаем предсказание
-            input_data = pd.DataFrame([features.model_dump()])
-            prediction = self.predictor.predict(input_data)[0]
-            
-            # Подготовка данных для сохранения в MongoDB
-            result_data = {
-                "input": features.model_dump(),
-                "prediction": prediction
-            }
-            
-            # Сохраняем результат в коллекцию 'predictions'
-            try:
-                result = self.db.predictions.insert_one(result_data)
-                self.logger.info(f"Prediction saved with id: {result.inserted_id}")
-            except Exception as e: # pragma: no cover
-                self.logger.error("Error saving prediction", exc_info=True)
-                
-            return {"prediction": prediction}
+        df_pred = self.pred.predict(df)
+        self.write_to_mongo(df_pred.select("_id", "cluster"))
+        self.log.info("Предсказания сохранены!")
 
-    def get_app(self):
-        """Возвращает экземпляр FastAPI приложения"""
-        return self.app
+        self.pred.stop()
 
+    def read_from_mongo(self):
+        """Загружаем коллекцию `products` через Spark-коннектор"""
+        return (
+            self.pred.spark.read
+            .format("mongodb")
+            .option("database",   "products_database")
+            .option("collection", "products")
+            .load()
+        )
 
-# Создаем экземпляр API
-api = CarPriceAPI()
-app = api.get_app()
+    def write_to_mongo(self, df: DataFrame):
+        """Пишем в новую коллекцию, чтобы не трогать оригинальные документы"""
+        (
+            df.write
+            .format("mongodb")
+            .mode("append")
+            .option("database",   "products_database")
+            .option("collection", "products_clusters")
+            .save()
+        )
+
+if __name__ == "__main__":
+    InferenceJob().run()

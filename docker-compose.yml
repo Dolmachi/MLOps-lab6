@@ -2,7 +2,7 @@ services:
   main:
     build: .
     image: main-image
-    container_name: api-container
+    container_name: main-container
     networks:
     - app-network
     depends_on:
