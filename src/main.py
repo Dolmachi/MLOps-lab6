@@ -1,6 +1,4 @@
-import os
 from logger import Logger
-from database import MongoDBConnector     # только чтобы взять cred’ы из конфигов
 from predict import Predictor
 from pyspark.sql import DataFrame
 

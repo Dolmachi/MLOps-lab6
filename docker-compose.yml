@@ -6,7 +6,8 @@ services:
     networks:
     - app-network
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
 
   mongodb:
     image: mongo
@@ -20,6 +21,12 @@ services:
       - ./scripts/restore.sh:/docker-entrypoint-initdb.d/restore.sh:ro
     networks:
       - app-network
+    healthcheck:
+      test: bash -c '[ -f /data/db/RESTORE_DONE ] && mongosh --quiet -u user -p 12345 --eval "db.adminCommand(\"ping\")"'
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
   
 networks:
   app-network:
